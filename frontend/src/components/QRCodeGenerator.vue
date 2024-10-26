@@ -10,53 +10,60 @@
           class="p-3 mb-3 w-full rounded-md border border-gray-300 bg-gray-50 text-gray-800 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300 ease-in-out"
         />
         <p v-if="error" class="text-pink-500 font-semibold mb-2">⚠️ Vous devez entrer quelque chose !</p>
-        <button 
-          @click="generateQRCode" 
+        <button
+          @click="generateQRCode"
           class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold py-2 px-6 rounded-md shadow-md transform hover:scale-105 transition-transform duration-300 ease-out"
         >
           Générer le QR Code
         </button>
         <div v-if="qrCodeUrl" class="qr-code-result mt-6 text-center">
           <h3 class="text-xl font-semibold mb-3 text-purple-600">Votre QR Code :</h3>
-          <img 
-            :src="qrCodeUrl" 
-            alt="QR Code" 
+          <img
+            :src="qrCodeUrl"
+            alt="QR Code"
             class="w-40 h-40 object-contain border-2 border-purple-200 rounded-lg shadow-lg transform hover:rotate-1 transition-transform duration-300"
           />
-          <a 
-            :href="qrCodeUrl" 
-            download="qrcode.png" 
+          <!-- <button @click="downloadQRCode"
             class="download-button mt-4 inline-block bg-green-500 hover:bg-green-400 text-white font-bold py-2 px-6 rounded-md shadow-md transform hover:scale-105 transition-transform duration-300 ease-out"
           >
             📥 Télécharger
-          </a>
+          </button> -->
+          <a
+          :href="downloadUrl"
+          :download="`${inputText.value}.png`"
+          class="download-button mt-4 inline-block bg-green-500 hover:bg-green-400 text-white font-bold py-2 px-6 rounded-md shadow-md transform hover:scale-105 transition-transform duration-300 ease-out"
+        >
+          📥 Télécharger
+        </a>
         </div>
       </div>
     </div>
   </template>
-  
+
   <script setup>
   import { ref } from "vue";
   import axios from "axios";
   import JsConfetti from "js-confetti"; // Importer js-confetti
-  
+
+const downloadUrl = ref("")
   const inputText = ref("");
   const qrCodeUrl = ref("");
   const error = ref(false);
-  
+
   // Créer une instance de JsConfetti
   const jsConfetti = new JsConfetti();
-  
+
   // Fonction pour envoyer le texte au backend et récupérer l'URL de l'image QR
   async function generateQRCode() {
     if (!inputText.value) {
       error.value = true;
       return;
     }
-  
+
     try {
       const response = await axios.post("http://localhost:3000/", { text: inputText.value });
       qrCodeUrl.value = `http://localhost:3000${response.data}`;
+      downloadUrl.value = qrCodeUrl.value;
       inputText.value = ""; // Réinitialisez le champ de texte
       jsConfetti.addConfetti(); // Déclenche l'effet de confetti
     } catch (err) {
@@ -64,10 +71,18 @@
       error.value = true;
     }
   }
-  
+
+  const downloadQRCode = () => {
+  const link = document.createElement('a');
+  link.href = qrCodeUrl.value;
+  link.download = inputText.value.replace(/[<>:"/\\|?*]/g, '') + '.png'; // Nom du fichier
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
   // Fonction pour effacer le message d'erreur
   function clearError() {
     error.value = false;
   }
   </script>
-  
